@@ -1,7 +1,5 @@
 """
 bot.py — App Flask unificada: web + webhook WhatsApp
-Sirve tanto la interfaz web (Fase 1) como el webhook de Twilio (Fase 2)
-en el mismo servidor y puerto.
 """
 
 import os
@@ -17,9 +15,33 @@ from meal_data import (
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", BASE_DIR)
-os.makedirs(DATA_DIR, exist_ok=True)
+
+# Elegir directorio de datos — probar el volume, caer en /app, caer en BASE_DIR
+def _resolve_data_dir():
+    candidates = [
+        os.getenv("RAILWAY_VOLUME_MOUNT_PATH"),  # volume de Railway
+        "/app/data",                              # fallback Railway
+        "/app",                                   # fallback Railway raíz
+        BASE_DIR,                                 # local
+    ]
+    for path in candidates:
+        if not path:
+            continue
+        try:
+            os.makedirs(path, exist_ok=True)
+            test = os.path.join(path, ".write_test")
+            with open(test, "w") as f:
+                f.write("ok")
+            os.remove(test)
+            print(f"[Storage] Usando directorio: {path}")
+            return path
+        except Exception as e:
+            print(f"[Storage] {path} no escribible: {e}")
+    return BASE_DIR
+
+DATA_DIR  = _resolve_data_dir()
 PLAN_FILE = os.path.join(DATA_DIR, "plan_semanal.json")
+print(f"[Storage] PLAN_FILE = {PLAN_FILE}")
 
 app = Flask(
     __name__,
@@ -38,11 +60,13 @@ def load_plan():
 
 
 def save_plan(plan):
+    print(f"[Storage] Guardando plan en: {PLAN_FILE}")
     with open(PLAN_FILE, "w", encoding="utf-8") as f:
         json.dump(plan, f, ensure_ascii=False, indent=2)
+    print(f"[Storage] Plan guardado OK ({os.path.getsize(PLAN_FILE)} bytes)")
 
 
-# ─── WEB — rutas de la Fase 1 ─────────────────────────────────────────────────
+# ─── WEB ──────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
@@ -70,11 +94,11 @@ def api_update_day(day):
     if day not in plan:
         return jsonify({"error": f"Día '{day}' no encontrado"}), 404
     data = request.get_json(force=True)
-    base        = data.get("base",          plan[day]["base"])
-    almuerzo_id = data.get("almuerzo_id",   plan[day].get("almuerzo_id"))
-    cena_id     = data.get("cena_id",       plan[day].get("cena_id"))
-    alm_acomp   = data.get("almuerzo_acomp",plan[day].get("almuerzo_acomp"))
-    cen_acomp   = data.get("cena_acomp",    plan[day].get("cena_acomp"))
+    base        = data.get("base",           plan[day]["base"])
+    almuerzo_id = data.get("almuerzo_id",    plan[day].get("almuerzo_id"))
+    cena_id     = data.get("cena_id",        plan[day].get("cena_id"))
+    alm_acomp   = data.get("almuerzo_acomp", plan[day].get("almuerzo_acomp"))
+    cen_acomp   = data.get("cena_acomp",     plan[day].get("cena_acomp"))
     rebuilt = rebuild_day(base, almuerzo_id, cena_id, alm_acomp, cen_acomp)
     if rebuilt:
         plan[day] = rebuilt
@@ -110,15 +134,14 @@ def api_meta():
     })
 
 
-# ─── WHATSAPP — webhook de Twilio ─────────────────────────────────────────────
+# ─── WHATSAPP ─────────────────────────────────────────────────────────────────
 
 @app.route("/whatsapp", methods=["POST"])
 def whatsapp_webhook():
     incoming = request.form.get("Body", "").strip()
     from_num = request.form.get("From", "")
-    print(f"[WhatsApp] De: {from_num} | Mensaje: \'{incoming}\'")
+    print(f"[WhatsApp] De: {from_num} | Mensaje: '{incoming}'")
     respuesta = handle_command(incoming)
-    # cmd_compras devuelve lista de mensajes; el resto devuelve string
     twiml = MessagingResponse()
     if isinstance(respuesta, list):
         for parte in respuesta:
@@ -128,20 +151,12 @@ def whatsapp_webhook():
     return str(twiml), 200, {"Content-Type": "text/xml"}
 
 
-# ─── Health check ─────────────────────────────────────────────────────────────
-
 @app.route("/health", methods=["GET"])
 def health():
-    return {"status": "ok", "service": "meal-planner"}, 200
+    return {"status": "ok", "plan_file": PLAN_FILE,
+            "plan_exists": os.path.exists(PLAN_FILE)}, 200
 
-
-# ─── Arranque standalone ──────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    port = int(os.getenv("FLASK_PORT", 5000))
-    print("=" * 55)
-    print("  🍽️  Planificador Semanal — Web + Bot WhatsApp")
-    print(f"  Web:     http://localhost:{port}")
-    print(f"  Webhook: http://localhost:{port}/whatsapp")
-    print("=" * 55)
-    app.run(debug=True, port=port)
+    port = int(os.getenv("PORT", os.getenv("FLASK_PORT", 5000)))
+    app.run(host="0.0.0.0", port=port, debug=False)
