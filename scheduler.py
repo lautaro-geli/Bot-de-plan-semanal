@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 def _safe_send(message_fn):
     """Wrapper que captura errores para no romper el scheduler."""
     try:
-        from Bot import send_whatsapp
+        from bot import send_whatsapp
         text = message_fn()
         sid = send_whatsapp(text)
         logger.info(f"[Scheduler] Mensaje enviado. SID: {sid}")
