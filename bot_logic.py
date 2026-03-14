@@ -9,9 +9,29 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 _BASE = os.path.dirname(__file__)
-_DATA_DIR = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", _BASE)
-os.makedirs(_DATA_DIR, exist_ok=True)
-PLAN_FILE = os.path.join(_DATA_DIR, "plan_semanal.json")
+
+def _resolve_plan_file():
+    candidates = [
+        os.getenv("RAILWAY_VOLUME_MOUNT_PATH"),
+        "/app/data",
+        "/app",
+        _BASE,
+    ]
+    for path in candidates:
+        if not path:
+            continue
+        try:
+            os.makedirs(path, exist_ok=True)
+            test = os.path.join(path, ".write_test")
+            with open(test, "w") as f:
+                f.write("ok")
+            os.remove(test)
+            return os.path.join(path, "plan_semanal.json")
+        except Exception:
+            continue
+    return os.path.join(_BASE, "plan_semanal.json")
+
+PLAN_FILE = _resolve_plan_file()
 TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 
 DIAS_ORDER = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
