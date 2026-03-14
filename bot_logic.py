@@ -8,7 +8,10 @@ import os
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-PLAN_FILE = os.path.join(os.path.dirname(__file__), "plan_semanal.json")
+_BASE = os.path.dirname(__file__)
+_DATA_DIR = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", _BASE)
+os.makedirs(_DATA_DIR, exist_ok=True)
+PLAN_FILE = os.path.join(_DATA_DIR, "plan_semanal.json")
 TZ = ZoneInfo("America/Argentina/Buenos_Aires")
 
 DIAS_ORDER = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]

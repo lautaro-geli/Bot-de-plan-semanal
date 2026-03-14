@@ -17,7 +17,9 @@ from meal_data import (
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PLAN_FILE = os.path.join(BASE_DIR, "plan_semanal.json")
+DATA_DIR = os.getenv("RAILWAY_VOLUME_MOUNT_PATH", BASE_DIR)
+os.makedirs(DATA_DIR, exist_ok=True)
+PLAN_FILE = os.path.join(DATA_DIR, "plan_semanal.json")
 
 app = Flask(
     __name__,
