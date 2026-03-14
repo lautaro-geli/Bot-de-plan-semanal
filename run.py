@@ -1,6 +1,7 @@
 """
-run.py — Script principal Fase 2
-Usa importlib para cargar módulos por ruta absoluta (evita problemas de sys.path en Windows)
+run.py — Script principal
+- Local: Flask + ngrok + scheduler
+- Railway: Flask + scheduler (sin ngrok, Railway da la URL pública)
 """
 
 import os
@@ -11,10 +12,9 @@ import signal
 import logging
 import importlib.util
 
-# ── Ruta absoluta de este archivo ─────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# ── Cargar .env manualmente ───────────────────────────────────────────────────
+# Cargar .env si existe (local). En Railway las vars vienen del entorno.
 env_path = os.path.join(BASE_DIR, ".env")
 if os.path.exists(env_path):
     with open(env_path, encoding="utf-8") as f:
@@ -31,14 +31,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-PORT = int(os.getenv("FLASK_PORT", 5000))
+# Railway asigna el puerto via variable PORT
+PORT = int(os.getenv("PORT", os.getenv("FLASK_PORT", 5000)))
+
+# Detectar si estamos en Railway
+ON_RAILWAY = os.getenv("RAILWAY_ENVIRONMENT") is not None or os.getenv("RAILWAY_PROJECT_ID") is not None
 
 
-# ── Cargar cualquier módulo local por ruta absoluta ───────────────────────────
+# ── Cargar módulo local por ruta absoluta ─────────────────────────────────────
 def load_local(name, filename):
     path = os.path.join(BASE_DIR, filename)
     if not os.path.exists(path):
-        print(f"\n❌ No se encontró el archivo: {path}")
+        print(f"\n❌ No se encontró: {path}")
         sys.exit(1)
     spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
@@ -49,38 +53,43 @@ def load_local(name, filename):
 
 # ── Validaciones ──────────────────────────────────────────────────────────────
 def check_env():
-    required = [
-        "TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN",
-        "TWILIO_WHATSAPP_NUMBER", "TO_WHATSAPP_NUMBER",
-        "NGROK_AUTHTOKEN", "NGROK_DOMAIN",
-    ]
+    required = ["TWILIO_ACCOUNT_SID", "TWILIO_AUTH_TOKEN",
+                "TWILIO_WHATSAPP_NUMBER", "TO_WHATSAPP_NUMBER"]
+    # ngrok solo requerido en local
+    if not ON_RAILWAY:
+        required += ["NGROK_AUTHTOKEN", "NGROK_DOMAIN"]
+
     missing = [k for k in required
                if not os.getenv(k, "").strip()
                or "XXXX" in os.getenv(k, "")
                or "xxxxxxx" in os.getenv(k, "")]
     if missing:
-        print("\n❌ Faltan configurar estas variables en .env:\n")
+        print("\n❌ Faltan configurar estas variables:\n")
         for m in missing:
             print(f"   • {m}")
-        print("\n👉 Editá el archivo .env con tus credenciales reales.\n")
+        if not ON_RAILWAY:
+            print("\n👉 Editá el archivo .env\n")
+        else:
+            print("\n👉 Agregalas en Railway → Variables\n")
         sys.exit(1)
 
 
 def check_plan():
     if not os.path.exists(os.path.join(BASE_DIR, "plan_semanal.json")):
         print("\n⚠️  No existe plan_semanal.json")
-        print("   Abrí http://localhost:5000 y generá un plan primero.\n")
+        print("   Generá un plan desde la web primero.\n")
 
 
-# ── Flask en hilo ─────────────────────────────────────────────────────────────
+# ── Flask ─────────────────────────────────────────────────────────────────────
 def run_flask():
-    load_local("meal_data", "meal_data.py")
-    load_local("bot_logic", "bot_logic.py")
-    bot = load_local("bot", "bot.py")
+    load_local("meal_data",  "meal_data.py")
+    load_local("bot_logic",  "bot_logic.py")
+    bot = load_local("bot",  "bot.py")
+    # En Railway usar host 0.0.0.0 es obligatorio
     bot.app.run(host="0.0.0.0", port=PORT, debug=False, use_reloader=False)
 
 
-# ── ngrok ─────────────────────────────────────────────────────────────────────
+# ── ngrok (solo local) ────────────────────────────────────────────────────────
 def start_ngrok():
     from pyngrok import ngrok, conf
     conf.get_default().auth_token = os.getenv("NGROK_AUTHTOKEN")
@@ -92,28 +101,40 @@ def start_ngrok():
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     print("\n" + "═" * 58)
-    print("  🤖  Planificador Semanal — Bot WhatsApp  (Fase 2)")
+    print("  🤖  Planificador Semanal — Bot WhatsApp")
+    env_label = "☁️  Railway" if ON_RAILWAY else "💻  Local"
+    print(f"  Entorno: {env_label}")
     print("═" * 58)
 
     check_env()
     check_plan()
 
     # 1. Flask
-    print("\n▶  Iniciando servidor Flask...")
+    print(f"\n▶  Iniciando Flask en puerto {PORT}...")
     flask_thread = threading.Thread(target=run_flask, daemon=True)
     flask_thread.start()
     time.sleep(2)
-    print(f"   ✅ Flask corriendo en http://localhost:{PORT}")
+    print(f"   ✅ Flask corriendo")
 
-    # 2. ngrok
-    domain = os.getenv("NGROK_DOMAIN")
-    print(f"\n▶  Conectando ngrok → {domain}...")
-    try:
-        public_url = start_ngrok()
-    except Exception as e:
-        print(f"\n❌ Error ngrok: {e}")
-        sys.exit(1)
-    print(f"   ✅ Túnel activo: {public_url}")
+    # 2. ngrok — solo en local
+    if ON_RAILWAY:
+        public_url = os.getenv("RAILWAY_PUBLIC_DOMAIN", "")
+        if public_url:
+            public_url = f"https://{public_url}"
+            webhook_url = f"{public_url}/whatsapp"
+            print(f"\n   🌐 URL pública: {public_url}")
+        else:
+            webhook_url = "(configurá RAILWAY_PUBLIC_DOMAIN)"
+    else:
+        domain = os.getenv("NGROK_DOMAIN")
+        print(f"\n▶  Conectando ngrok → {domain}...")
+        try:
+            public_url = start_ngrok()
+        except Exception as e:
+            print(f"\n❌ Error ngrok: {e}")
+            sys.exit(1)
+        print(f"   ✅ Túnel activo: {public_url}")
+        webhook_url = f"{public_url}/whatsapp"
 
     # 3. Scheduler
     print("\n▶  Iniciando mensajes automáticos...")
@@ -121,15 +142,10 @@ def main():
     from scheduler import start_scheduler
     scheduler = start_scheduler()
 
-    webhook_url = f"{public_url}/whatsapp"
     print("\n" + "═" * 58)
-    print("  📋  URL DEL WEBHOOK — pegá esto en Twilio")
-    print("═" * 58)
+    print("  📋  URL DEL WEBHOOK para Twilio:")
     print(f"\n  👉  {webhook_url}\n")
-    print("  Twilio → Messaging → Sandbox settings")
-    print("  «WHEN A MESSAGE COMES IN» → pegá la URL → POST → Guardar")
-    print("\n" + "═" * 58)
-    print("  ✅  Bot listo. Esperando mensajes en WhatsApp...")
+    print("  ✅  Bot listo. Esperando mensajes...")
     print("  🛑  Para detener: Ctrl+C")
     print("═" * 58 + "\n")
 
@@ -137,8 +153,9 @@ def main():
         print("\n🛑 Deteniendo...")
         try:
             scheduler.shutdown(wait=False)
-            from pyngrok import ngrok
-            ngrok.kill()
+            if not ON_RAILWAY:
+                from pyngrok import ngrok
+                ngrok.kill()
         except Exception:
             pass
         sys.exit(0)
