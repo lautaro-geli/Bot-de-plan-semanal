@@ -1,0 +1,6 @@
+.env
+plan_semanal.json
+__pycache__/
+*.pyc
+venv/
+.venv/

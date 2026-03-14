@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planificador Semanal · Familia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════
+   VARIABLES & RESET
+═══════════════════════════════════════════════════════ */
+:root {
+  --bg:        #0b0904;
+  --bg-card:   #161009;
+  --bg-card2:  #1e1710;
+  --bg-modal:  #12100b;
+  --border:    #2e2416;
+  --border2:   #3d3120;
+  --text:      #ede4d4;
+  --muted:     #8a7d6a;
+  --label:     #b09c84;
+  --accent:    #c4541f;
+  --accent-h:  #d9622a;
+  --gold:      #c4943a;
+  --gold-h:    #d6a844;
+  --green:     #4d8a52;
+  --green-h:   #5ea364;
+  --blue:      #3d6e9e;
+  --red:       #963333;
+  --tag-carne: #6e3020;
+  --tag-pollo: #5a6e20;
+  --tag-pesc:  #1e4d6e;
+  --tag-leg:   #4a3d6e;
+  --tag-libre: #6e4a1e;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --shadow: 0 4px 24px rgba(0,0,0,.5);
+  --shadow-lg: 0 8px 48px rgba(0,0,0,.7);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════
+   BACKGROUND TEXTURE
+═══════════════════════════════════════════════════════ */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 15% 10%, rgba(196,84,31,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 85% 85%, rgba(196,148,58,.07) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(77,138,82,.04) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════════════ */
+.page { position: relative; z-index: 1; max-width: 1280px; margin: 0 auto; padding: 0 24px 60px; }
+
+/* ═══════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════ */
+.header {
+  padding: 40px 0 28px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 36px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.header-left h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+
+.header-left h1 em {
+  font-style: italic;
+  color: var(--gold);
+}
+
+.header-left p {
+  color: var(--muted);
+  margin-top: 6px;
+  font-size: .9rem;
+  letter-spacing: .03em;
+}
+
+.header-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border2);
+  border-radius: 100px;
+  padding: 8px 18px;
+  font-size: .8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.header-badge span { color: var(--text); font-weight: 600; }
+
+/* ═══════════════════════════════════════════════════════
+   ACTION BAR
+═══════════════════════════════════════════════════════ */
+.action-bar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: var(--r-md);
+  font-family: 'Nunito', sans-serif;
+  font-size: .9rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  cursor: pointer;
+  transition: all .18s ease;
+  border: none;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,.07);
+  opacity: 0;
+  transition: opacity .15s;
+}
+
+.btn:hover::after { opacity: 1; }
+.btn:active { transform: scale(.97); }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(196,84,31,.4);
+}
+.btn-primary:hover { background: var(--accent-h); box-shadow: 0 4px 20px rgba(196,84,31,.5); }
+
+.btn-gold {
+  background: var(--gold);
+  color: #0b0904;
+  box-shadow: 0 2px 12px rgba(196,148,58,.3);
+}
+.btn-gold:hover { background: var(--gold-h); }
+
+.btn-ghost {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 1px solid var(--border2);
+}
+.btn-ghost:hover { background: var(--bg-card2); border-color: var(--muted); }
+
+.btn-green {
+  background: var(--green);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(77,138,82,.3);
+}
+.btn-green:hover { background: var(--green-h); }
+
+.btn-icon { font-size: 1.1rem; }
+
+/* ═══════════════════════════════════════════════════════
+   SECTION TITLES
+═══════════════════════════════════════════════════════ */
+.section-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.7rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════
+   WEEK GRID
+═══════════════════════════════════════════════════════ */
+#plan-section { animation: fadeIn .4s ease; }
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Day Card ─────────────────────────────────────── */
+.day-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  transition: border-color .2s, transform .2s;
+  animation: slideUp .35s ease both;
+}
+
+.day-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-2px);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.day-card:nth-child(1) { animation-delay: .04s; }
+.day-card:nth-child(2) { animation-delay: .08s; }
+.day-card:nth-child(3) { animation-delay: .12s; }
+.day-card:nth-child(4) { animation-delay: .16s; }
+.day-card:nth-child(5) { animation-delay: .20s; }
+.day-card:nth-child(6) { animation-delay: .24s; }
+.day-card:nth-child(7) { animation-delay: .28s; }
+
+.day-header {
+  padding: 14px 18px 12px;
+  background: var(--bg-card2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.day-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: .01em;
+}
+
+.base-tag {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+
+.base-carne  { background: var(--tag-carne); color: #f4b89e; }
+.base-pollo  { background: var(--tag-pollo); color: #d4e88e; }
+.base-pescado{ background: var(--tag-pesc);  color: #8ec8f4; }
+.base-legumbre{ background: var(--tag-leg);  color: #c4b4f4; }
+.base-libre  { background: var(--tag-libre); color: #f4c88e; }
+
+.day-meals { padding: 14px 18px 16px; }
+
+.meal-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.meal-row:last-child { margin-bottom: 0; }
+
+.meal-icon {
+  width: 32px; height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--bg-card2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+
+.meal-info { flex: 1; min-width: 0; }
+
+.meal-label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.meal-name {
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.day-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-family: 'Nunito', sans-serif;
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  transition: all .15s;
+}
+
+.day-edit-btn:hover {
+  background: var(--bg-card2);
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+/* ═══════════════════════════════════════════════════════
+   SHOPPING LIST
+═══════════════════════════════════════════════════════ */
+#shopping-section {
+  margin-top: 48px;
+  animation: fadeIn .4s ease;
+}
+
+.shopping-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 6px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Nunito', sans-serif;
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  letter-spacing: .03em;
+}
+
+.filter-btn.active, .filter-btn:hover {
+  background: var(--bg-card2);
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.filter-btn.active { border-color: var(--gold); color: var(--gold); }
+
+.shopping-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.shopping-category {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.category-header {
+  padding: 12px 20px;
+  background: var(--bg-card2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--label);
+}
+
+.category-icon { font-size: 1.1rem; }
+
+.category-count {
+  margin-left: auto;
+  background: var(--border2);
+  color: var(--muted);
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: .72rem;
+}
+
+.shopping-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1px;
+  background: var(--border);
+}
+
+.shopping-item {
+  background: var(--bg-card);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  transition: background .15s;
+}
+
+.shopping-item:hover { background: var(--bg-card2); }
+
+.item-name {
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.item-qty {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  background: var(--bg-modal);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-lg);
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  transform: scale(.96) translateY(8px);
+  transition: transform .2s;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-overlay.open .modal { transform: scale(1) translateY(0); }
+
+.modal-header {
+  padding: 22px 24px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  width: 32px; height: 32px;
+  border-radius: var(--r-sm);
+  background: var(--bg-card2);
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+
+.modal-close:hover { color: var(--text); background: var(--border2); }
+
+.modal-body { padding: 20px 24px; }
+
+.form-group { margin-bottom: 18px; }
+
+.form-label {
+  display: block;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+
+.form-select, .form-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border2);
+  border-radius: var(--r-sm);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: .9rem;
+  padding: 10px 14px;
+  appearance: none;
+  transition: border-color .15s;
+  cursor: pointer;
+}
+
+.form-select:hover, .form-input:hover { border-color: var(--muted); }
+.form-select:focus, .form-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.form-select option {
+  background: #1e1710;
+  color: var(--text);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.modal-footer {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* ═══════════════════════════════════════════════════════
+   EMPTY STATE
+═══════════════════════════════════════════════════════ */
+.empty-state {
+  text-align: center;
+  padding: 64px 20px;
+  color: var(--muted);
+}
+
+.empty-state .big-icon {
+  font-size: 3.5rem;
+  margin-bottom: 16px;
+  opacity: .6;
+}
+
+.empty-state h3 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.6rem;
+  color: var(--label);
+  margin-bottom: 8px;
+}
+
+.empty-state p { font-size: .9rem; max-width: 320px; margin: 0 auto; }
+
+/* ═══════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════ */
+#toast {
+  position: fixed;
+  bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--bg-card2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 12px 24px;
+  border-radius: 100px;
+  font-size: .87rem;
+  font-weight: 600;
+  z-index: 9999;
+  box-shadow: var(--shadow);
+  transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+  white-space: nowrap;
+}
+
+#toast.show { transform: translateX(-50%) translateY(0); }
+#toast.success { border-color: var(--green); color: #8fe094; }
+#toast.error   { border-color: var(--red);  color: #f48e8e; }
+
+/* ═══════════════════════════════════════════════════════
+   LOADING SPINNER
+═══════════════════════════════════════════════════════ */
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══════════════════════════════════════════════════════
+   DIVIDER
+═══════════════════════════════════════════════════════ */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 44px 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ═══════════════════════════════════════════════════════
+   PRINT
+═══════════════════════════════════════════════════════ */
+@media print {
+  body { background: #fff; color: #000; }
+  .action-bar, .day-edit-btn, .modal-overlay, #toast { display: none !important; }
+  .page::before, body::before { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .form-row { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: flex-start; }
+  .week-grid { grid-template-columns: 1fr; }
+  .shopping-items { grid-template-columns: 1fr; }
+}
+
+/* ─── Ingredient count badge in card ──────────── */
+.ing-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: .72rem;
+  color: var(--muted);
+  margin-top: 8px;
+  padding: 3px 8px;
+  background: var(--bg-card2);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ══ HEADER ══════════════════════════════════════════ -->
+  <header class="header">
+    <div class="header-left">
+      <h1>Planificador <em>Semanal</em><br>de Comidas</h1>
+      <p>Cocina argentina · 5 personas · generado con amor</p>
+    </div>
+    <div class="header-badge">
+      👨‍👩‍👧‍👦 <span>5 personas</span> &nbsp;·&nbsp; 🗓️ <span>7 días</span> &nbsp;·&nbsp; 🍽️ <span>14 comidas</span>
+    </div>
+  </header>
+
+  <!-- ══ ACTION BAR ═══════════════════════════════════════ -->
+  <div class="action-bar">
+    <button class="btn btn-primary" onclick="generatePlan()">
+      <span class="btn-icon">✨</span> Generar plan semanal
+    </button>
+    <button class="btn btn-ghost" onclick="loadPlan()">
+      <span class="btn-icon">📅</span> Ver plan
+    </button>
+    <button class="btn btn-gold" onclick="loadShopping()">
+      <span class="btn-icon">🛒</span> Lista de compras
+    </button>
+    <button class="btn btn-ghost" onclick="printPage()">
+      <span class="btn-icon">🖨️</span> Imprimir
+    </button>
+  </div>
+
+  <!-- ══ PLAN SECTION ════════════════════════════════════ -->
+  <section id="plan-section" style="display:none">
+    <h2 class="section-title">📅 Plan de la semana</h2>
+    <div class="week-grid" id="week-grid"></div>
+  </section>
+
+  <div class="divider" id="divider" style="display:none"></div>
+
+  <!-- ══ SHOPPING SECTION ═══════════════════════════════ -->
+  <section id="shopping-section" style="display:none">
+    <h2 class="section-title">🛒 Lista de compras</h2>
+    <div class="shopping-controls" id="shopping-controls"></div>
+    <div class="shopping-categories" id="shopping-categories"></div>
+  </section>
+
+</div><!-- /page -->
+
+
+<!-- ══ EDIT MODAL ════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modal-title">Editar día</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-day">
+
+      <div class="form-group">
+        <label class="form-label">Ingrediente base</label>
+        <select class="form-select" id="edit-base" onchange="onBaseChange()">
+          <option value="carne vacuna">🥩 Carne vacuna</option>
+          <option value="pollo">🍗 Pollo</option>
+          <option value="pescado">🐟 Pescado</option>
+          <option value="legumbres">🫘 Legumbres</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Almuerzo</label>
+        <select class="form-select" id="edit-almuerzo" onchange="onMealChange('almuerzo')"></select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Acompañamiento almuerzo</label>
+        <select class="form-select" id="edit-alm-acomp"></select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Cena</label>
+          <select class="form-select" id="edit-cena" onchange="onMealChange('cena')"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Acompañamiento cena</label>
+          <select class="form-select" id="edit-cen-acomp"></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEdit()">
+        <span class="btn-icon">💾</span> Guardar cambios
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ═════════════════════════════════════════════ -->
+<div id="toast"></div>
+
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════════ */
+let planData    = {};
+let mealsCache  = {};
+let activeFilter = 'todos';
+
+const CATEGORY_META = {
+  carnes:   { icon: '🥩', label: 'Carnes y proteínas' },
+  verduras: { icon: '🥦', label: 'Verduras y frutas' },
+  lácteos:  { icon: '🧀', label: 'Lácteos' },
+  secos:    { icon: '🌾', label: 'Secos y almacén' },
+  otros:    { icon: '🫙', label: 'Condimentos y otros' },
+};
+
+const BASE_TAG = {
+  'carne vacuna': ['base-carne',   '🥩'],
+  'pollo':        ['base-pollo',   '🍗'],
+  'pescado':      ['base-pescado', '🐟'],
+  'legumbres':    ['base-legumbre','🫘'],
+};
+
+const DIAS_ES = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+
+/* ══════════════════════════════════════════════════════════
+   API HELPERS
+══════════════════════════════════════════════════════════ */
+async function apiFetch(url, opts = {}) {
+  try {
+    const res = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts
+    });
+    return await res.json();
+  } catch (e) {
+    console.error(e);
+    toast('Error de conexión', 'error');
+    return null;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   GENERATE PLAN
+══════════════════════════════════════════════════════════ */
+async function generatePlan() {
+  const btn = event.currentTarget;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Generando...';
+  btn.disabled = true;
+
+  const data = await apiFetch('/api/generate', { method: 'POST' });
+
+  btn.innerHTML = orig;
+  btn.disabled = false;
+
+  if (data && data.plan) {
+    planData = data.plan;
+    renderPlan();
+    toast('✨ Plan generado correctamente', 'success');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   LOAD PLAN
+══════════════════════════════════════════════════════════ */
+async function loadPlan() {
+  const data = await apiFetch('/api/plan');
+  if (!data) return;
+
+  if (data.status === 'empty' || !Object.keys(data.plan || {}).length) {
+    toast('No hay plan guardado. Generá uno primero.', 'error');
+    return;
+  }
+
+  planData = data.plan;
+  renderPlan();
+}
+
+/* ══════════════════════════════════════════════════════════
+   RENDER PLAN
+══════════════════════════════════════════════════════════ */
+function renderPlan() {
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = '';
+
+  const section = document.getElementById('plan-section');
+  section.style.display = 'block';
+  document.getElementById('divider').style.display = 'block';
+
+  DIAS_ES.forEach(dia => {
+    const day = planData[dia];
+    if (!day) return;
+
+    const [tagClass, tagIcon] = BASE_TAG[day.base] || ['base-libre', '🍴'];
+    const baseLabel = day.base.charAt(0).toUpperCase() + day.base.slice(1);
+
+    const card = document.createElement('div');
+    card.className = 'day-card';
+    card.innerHTML = `
+      <div class="day-header">
+        <div class="day-name">${dia}</div>
+        <span class="base-tag ${tagClass}">${tagIcon} ${baseLabel}</span>
+      </div>
+      <div class="day-meals">
+        <div class="meal-row">
+          <div class="meal-icon">☀️</div>
+          <div class="meal-info">
+            <div class="meal-label">Almuerzo</div>
+            <div class="meal-name">${day.almuerzo}</div>
+          </div>
+        </div>
+        <div class="meal-row">
+          <div class="meal-icon">🌙</div>
+          <div class="meal-info">
+            <div class="meal-label">Cena</div>
+            <div class="meal-name">${day.cena}</div>
+          </div>
+        </div>
+        <span class="ing-badge">📦 ${(day.ingredientes || []).length} ingredientes</span>
+        <button class="day-edit-btn" onclick="openEdit('${dia}')">
+          ✏️ Editar este día
+        </button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ══════════════════════════════════════════════════════════
+   SHOPPING LIST
+══════════════════════════════════════════════════════════ */
+async function loadShopping() {
+  const btn = event.currentTarget;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Calculando...';
+  btn.disabled = true;
+
+  const data = await apiFetch('/api/shopping');
+
+  btn.innerHTML = orig;
+  btn.disabled = false;
+
+  if (!data) return;
+
+  if (data.status === 'empty') {
+    toast('Generá un plan primero', 'error');
+    return;
+  }
+
+  renderShopping(data.items);
+}
+
+function renderShopping(items) {
+  const section  = document.getElementById('shopping-section');
+  const controls = document.getElementById('shopping-controls');
+  const cats     = document.getElementById('shopping-categories');
+
+  section.style.display = 'block';
+  document.getElementById('divider').style.display = 'block';
+
+  // Group by category
+  const grouped = {};
+  items.forEach(item => {
+    const c = item.categoria || 'otros';
+    if (!grouped[c]) grouped[c] = [];
+    grouped[c].push(item);
+  });
+
+  const catOrder = ['carnes', 'verduras', 'lácteos', 'secos', 'otros'];
+  const catList  = catOrder.filter(c => grouped[c]);
+
+  // Controls (filter buttons)
+  controls.innerHTML = `
+    <button class="filter-btn ${activeFilter === 'todos' ? 'active' : ''}"
+            onclick="filterShopping('todos')">Todos (${items.length})</button>
+  `;
+  catList.forEach(cat => {
+    const m = CATEGORY_META[cat] || { icon: '📦', label: cat };
+    controls.innerHTML += `
+      <button class="filter-btn ${activeFilter === cat ? 'active' : ''}"
+              onclick="filterShopping('${cat}')">
+        ${m.icon} ${m.label.split(' ')[0]} (${grouped[cat].length})
+      </button>
+    `;
+  });
+
+  // Categories grid
+  cats.innerHTML = '';
+  catList.forEach(cat => {
+    if (activeFilter !== 'todos' && activeFilter !== cat) return;
+
+    const m = CATEGORY_META[cat] || { icon: '📦', label: cat };
+    const div = document.createElement('div');
+    div.className = 'shopping-category';
+
+    const itemsHtml = grouped[cat].map(item => `
+      <div class="shopping-item">
+        <span class="item-name">${item.nombre}</span>
+        <span class="item-qty">${item.cantidad}</span>
+      </div>
+    `).join('');
+
+    div.innerHTML = `
+      <div class="category-header">
+        <span class="category-icon">${m.icon}</span>
+        ${m.label}
+        <span class="category-count">${grouped[cat].length} items</span>
+      </div>
+      <div class="shopping-items">${itemsHtml}</div>
+    `;
+    cats.appendChild(div);
+  });
+
+  section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function filterShopping(cat) {
+  activeFilter = cat;
+  // Re-render the controls and categories without re-fetching
+  const cats = document.getElementById('shopping-categories');
+  const items = cats.querySelectorAll('.shopping-item');
+  // Actually just re-fetch and re-render (simpler)
+  loadShopping();
+}
+
+/* ══════════════════════════════════════════════════════════
+   EDIT MODAL
+══════════════════════════════════════════════════════════ */
+async function openEdit(dia) {
+  const day = planData[dia];
+  if (!day) return;
+
+  document.getElementById('edit-day').value   = dia;
+  document.getElementById('modal-title').textContent = `Editar — ${dia.charAt(0).toUpperCase() + dia.slice(1)}`;
+
+  // Set base
+  document.getElementById('edit-base').value = day.base;
+
+  // Load meals for this base
+  await populateMealSelects(day.base, day.almuerzo_id, day.cena_id, day.almuerzo_acomp, day.cena_acomp);
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+async function populateMealSelects(base, selAlmId, selCenId, selAlmAcomp, selCenAcomp) {
+  if (!mealsCache[base]) {
+    const data = await apiFetch(`/api/meals/${encodeURIComponent(base)}`);
+    if (data) mealsCache[base] = data;
+  }
+
+  const meals = mealsCache[base] || { almuerzos: [], cenas: [] };
+  const almSel = document.getElementById('edit-almuerzo');
+  const cenSel = document.getElementById('edit-cena');
+
+  almSel.innerHTML = meals.almuerzos.map(m =>
+    `<option value="${m.id}" data-acomps='${JSON.stringify(m.acompañamientos)}'
+     ${m.id === selAlmId ? 'selected' : ''}>${m.plato}</option>`
+  ).join('');
+
+  cenSel.innerHTML = meals.cenas.map(m =>
+    `<option value="${m.id}" data-acomps='${JSON.stringify(m.acompañamientos)}'
+     ${m.id === selCenId ? 'selected' : ''}>${m.plato}</option>`
+  ).join('');
+
+  populateAcompSelect('edit-alm-acomp', getSelectedAcomps(almSel), selAlmAcomp);
+  populateAcompSelect('edit-cen-acomp', getSelectedAcomps(cenSel), selCenAcomp);
+}
+
+function getSelectedAcomps(selectEl) {
+  const opt = selectEl.options[selectEl.selectedIndex];
+  if (!opt) return [];
+  try { return JSON.parse(opt.dataset.acomps || '[]'); } catch { return []; }
+}
+
+function populateAcompSelect(selectId, acomps, selectedVal) {
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = acomps.map(a =>
+    `<option value="${a}" ${a === selectedVal ? 'selected' : ''}>${a.charAt(0).toUpperCase() + a.slice(1)}</option>`
+  ).join('');
+}
+
+async function onBaseChange() {
+  const base = document.getElementById('edit-base').value;
+  await populateMealSelects(base);
+}
+
+function onMealChange(tipo) {
+  const sel = document.getElementById(tipo === 'almuerzo' ? 'edit-almuerzo' : 'edit-cena');
+  const acompId = tipo === 'almuerzo' ? 'edit-alm-acomp' : 'edit-cen-acomp';
+  populateAcompSelect(acompId, getSelectedAcomps(sel), null);
+}
+
+async function saveEdit() {
+  const dia        = document.getElementById('edit-day').value;
+  const base       = document.getElementById('edit-base').value;
+  const almuId     = document.getElementById('edit-almuerzo').value;
+  const cenaId     = document.getElementById('edit-cena').value;
+  const almAcomp   = document.getElementById('edit-alm-acomp').value;
+  const cenAcomp   = document.getElementById('edit-cen-acomp').value;
+
+  const btn = document.querySelector('.modal-footer .btn-primary');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Guardando...';
+  btn.disabled = true;
+
+  const data = await apiFetch(`/api/plan/${encodeURIComponent(dia)}`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      base, almuerzo_id: almuId, cena_id: cenaId,
+      almuerzo_acomp: almAcomp, cena_acomp: cenAcomp
+    })
+  });
+
+  btn.innerHTML = orig;
+  btn.disabled = false;
+
+  if (data && data.status === 'ok') {
+    planData[dia] = data.data;
+    renderPlan();
+    closeModal();
+    toast('✅ Cambios guardados', 'success');
+  } else {
+    toast('Error al guardar', 'error');
+  }
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+/* ══════════════════════════════════════════════════════════
+   PRINT
+══════════════════════════════════════════════════════════ */
+function printPage() {
+  if (!Object.keys(planData).length) {
+    toast('Cargá o generá un plan primero', 'error');
+    return;
+  }
+  window.print();
+}
+
+/* ══════════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════════ */
+let toastTimeout;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = type ? `show ${type}` : 'show';
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => { el.className = ''; }, 3200);
+}
+
+/* ══════════════════════════════════════════════════════════
+   INIT — Auto-load plan if exists
+══════════════════════════════════════════════════════════ */
+(async function init() {
+  const data = await apiFetch('/api/plan');
+  if (data && data.status === 'ok' && Object.keys(data.plan || {}).length) {
+    planData = data.plan;
+    renderPlan();
+  }
+})();
+</script>
+
+</body>
+</html>
