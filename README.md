@@ -1,4 +1,4 @@
-# 🍽️ Planificador Semanal de Comidas
+# Planificador Semanal de Comidas
 
 Aplicación web + bot de WhatsApp para planificación semanal de comidas para una familia. Desarrollado como proyecto de prácticas profesionalizantes.
 
@@ -28,7 +28,7 @@ Aplicación web + bot de WhatsApp para planificación semanal de comidas para un
 > Proyecto desarrollado con asistencia de IA (Claude - Anthropic) como herramienta de apoyo en el proceso de desarrollo
 ---
 
-## ☁️ Producción
+## Producción
 
 Hosteado en Railway con Volume para persistencia de datos.  
 Web: `https://bot-de-plan-semanal-production.up.railway.app`
