@@ -23,8 +23,7 @@ Aplicación web + bot de WhatsApp para planificación semanal de comidas para un
 - Genera la lista de compras automáticamente sumando ingredientes
 - Bot de WhatsApp con comandos: `plan`, `hoy`, `compras`, `menu`
 - Envía las comidas del día cada mañana por WhatsApp de forma automática
-
----
+  
 > Proyecto desarrollado con asistencia de IA (Claude - Anthropic) como herramienta de apoyo en el proceso de desarrollo
 ---
 
