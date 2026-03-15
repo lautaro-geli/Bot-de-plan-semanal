@@ -4,7 +4,7 @@ Aplicación web + bot de WhatsApp para planificación semanal de comidas para un
 
 ---
 
-## 🧰 Tecnologías utilizadas
+## Tecnologías utilizadas
 
 - **Python 3 + Flask** — backend y API REST
 - **HTML + CSS + JavaScript** — frontend sin frameworks
